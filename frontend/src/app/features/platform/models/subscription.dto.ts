@@ -27,7 +27,7 @@ export interface ApiKeyBindingOutputDto {
 export interface CreateApiKeyInputDto {
   name: string;
   description?: string;
-  expiresAt?: string; // null 表示永不过期
+  expiresAt?: string | null;
   customSecret?: string; // 自定义密钥值（为空则自动生成，6-48位，包含_或-、数字、字母）
   bindings: ApiKeyBindGroupInputDto[];
 }
@@ -43,7 +43,7 @@ export type CreateSubscriptionInputDto = CreateApiKeyInputDto;
 export interface UpdateApiKeyInputDto {
   name?: string;
   description?: string;
-  expiresAt?: string;
+  expiresAt?: string | null;
   bindings: ApiKeyBindGroupInputDto[];
 }
 

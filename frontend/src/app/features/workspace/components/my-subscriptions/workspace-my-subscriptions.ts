@@ -75,9 +75,13 @@ export class WorkspaceMySubscriptionsPage {
   onSaveSubscription(payload: CreateApiKeyInputDto | UpdateApiKeyInputDto) {
     this.saving.set(true);
     const selected = this.selectedSubscription();
+    const normalized = {
+      ...payload,
+      expiresAt: payload.expiresAt ?? undefined
+    };
     const request$ = selected
-      ? this.subscriptionService.updateSubscription(selected.id, payload)
-      : this.subscriptionService.createSubscription(payload as CreateApiKeyInputDto);
+      ? this.subscriptionService.updateSubscription(selected.id, normalized)
+      : this.subscriptionService.createSubscription(normalized as CreateApiKeyInputDto);
 
     request$
       .pipe(
