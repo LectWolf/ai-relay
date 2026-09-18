@@ -100,7 +100,9 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64,linux/arm64
+          # 1Panel / Debian 生产只需 amd64。arm64 会在 x86 runner 上走 QEMU，
+          # 前端 ng build 和 dotnet publish 会被完整再跑一遍，经常拖到一小时以上。
+          platforms: linux/amd64
           push: true
           tags: |
             ${{ env.IMAGE_NAME }}:${{ needs.validate.outputs.version }}
