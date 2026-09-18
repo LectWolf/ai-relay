@@ -58,3 +58,6 @@ Logs/
 *.tmp
 *.temp
 *.bak
+
+# LiveAgent local
+.pi/

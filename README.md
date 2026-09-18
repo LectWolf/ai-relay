@@ -140,7 +140,7 @@ docker run -d \
   -e ConnectionStrings__Redis="your-redis-host:6379,password=YourRedisPassword" \
   -e DefaultAdmin__Password="YourAdminPassword" \
   -e Jwt__SecretKey="YourSecretKey-MinimumLength32Characters!" \
-  ghcr.io/zengqinglei/ai-relay:latest
+  ghcr.io/lectwolf/ai-relay:latest
 ```
 
 ## 🏗️ 架构说明
