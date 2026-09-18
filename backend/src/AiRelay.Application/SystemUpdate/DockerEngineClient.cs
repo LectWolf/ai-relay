@@ -48,10 +48,40 @@ internal sealed class DockerEngineClient : IDisposable
     {
         var url = $"/v1.41/images/create?fromImage={Uri.EscapeDataString(image)}&tag={Uri.EscapeDataString(tag)}";
         using var response = await _http.PostAsync(url, null, cancellationToken);
-        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var reader = new StreamReader(stream);
+        var errors = new List<string>();
+        while (await reader.ReadLineAsync(cancellationToken) is { } line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(line);
+                if (doc.RootElement.TryGetProperty("error", out var error) &&
+                    error.ValueKind == JsonValueKind.String)
+                {
+                    var message = error.GetString();
+                    if (!string.IsNullOrWhiteSpace(message))
+                        errors.Add(message);
+                }
+            }
+            catch (JsonException)
+            {
+                // Docker 偶发非 JSON 进度行，忽略
+            }
+        }
+
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"拉取镜像失败 ({(int)response.StatusCode}): {Trim(body)}");
+            throw new InvalidOperationException(
+                $"拉取镜像失败 ({(int)response.StatusCode}): {(errors.Count > 0 ? string.Join("; ", errors) : "未知错误")}");
+        }
+
+        if (errors.Count > 0)
+        {
+            throw new InvalidOperationException($"拉取镜像失败: {string.Join("; ", errors)}");
         }
     }
 

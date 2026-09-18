@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 import { catchError, filter, finalize, of, switchMap, take, timer } from 'rxjs';
 
 import { SystemUpdateInfoDto, SystemVersionDto } from '../../models/system-update.dto';
@@ -16,7 +17,7 @@ import { SystemUpdateService } from '../../services/system-update-service';
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, CardModule, ButtonModule, TagModule, ConfirmDialogModule],
+  imports: [CommonModule, CardModule, ButtonModule, TagModule, ConfirmDialogModule, TooltipModule],
   providers: [ConfirmationService],
   templateUrl: './settings.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -144,7 +145,7 @@ export class Settings implements OnInit {
             detail: result.message
           });
           if (result.needRestart || result.recreateContainer) {
-            this.waitUntilBack();
+            this.waitUntilBack(this.info()?.latestVersion);
           } else {
             this.refresh(true);
           }
@@ -174,14 +175,22 @@ export class Settings implements OnInit {
       });
   }
 
-  private waitUntilBack(): void {
+  private waitUntilBack(expectedVersion?: string): void {
     this.waitingForRestart.set(true);
-    timer(4000, 2000)
+    timer(6000, 3000)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        take(90),
+        take(80),
         switchMap(() => this.service.getVersion().pipe(catchError(() => of(null)))),
-        filter((version): version is SystemVersionDto => version != null),
+        filter((version): version is SystemVersionDto => {
+          if (!version?.version) {
+            return false;
+          }
+          if (expectedVersion) {
+            return version.version === expectedVersion;
+          }
+          return true;
+        }),
         take(1),
         finalize(() => this.waitingForRestart.set(false))
       )

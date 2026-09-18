@@ -56,7 +56,7 @@ public class SystemController(
         {
             try
             {
-                await Task.Delay(800);
+                await Task.Delay(1500);
                 logger.LogInformation("管理端请求用镜像 {Image} 重建容器", image);
                 await systemUpdateAppService.RecreateContainerAsync(image);
             }

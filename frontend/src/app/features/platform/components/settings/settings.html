@@ -71,6 +71,7 @@
             label="立即重启"
             [outlined]="true"
             [disabled]="updating() || restarting() || waitingForRestart()"
+            pTooltip="容器更新请只点「立即更新」，不要再点重启，否则会把重建任务杀掉。"
             [loading]="restarting() || waitingForRestart()"
             (onClick)="confirmRestart()"
           />
