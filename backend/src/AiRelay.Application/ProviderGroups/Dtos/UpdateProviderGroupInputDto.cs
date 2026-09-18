@@ -41,7 +41,7 @@ public record UpdateProviderGroupInputDto
     /// <summary>
     /// 费率倍数
     /// </summary>
-    [Range(0.01, 100, ErrorMessage = "{0}必须在{1}-{2}之间")]
+    [Range(typeof(decimal), "0", "100", ErrorMessage = "{0}必须在{1}-{2}之间")]
     [Display(Name = "费率倍数")]
     public decimal RateMultiplier { get; init; } = 1.0m;
 }

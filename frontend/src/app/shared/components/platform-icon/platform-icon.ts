@@ -17,6 +17,7 @@ import { Provider } from '../../../shared/models/provider.enum';
         'text-surface-900 dark:text-surface-0': currentKind() === 'OpenAI' || currentKind() === 'Moonshot',
         'text-amber-600 dark:text-amber-400': currentKind() === 'Qwen',
         'text-emerald-500 dark:text-emerald-300': currentKind() === 'OpenAICompatible' || currentKind() === 'DeepSeek' || currentKind() === 'MiniMax',
+        'text-slate-700 dark:text-slate-200': currentKind() === 'Grok',
         'text-purple-600 dark:text-purple-400': currentKind() === 'Antigravity',
         'text-cyan-600 dark:text-cyan-400': currentKind() === 'Zhipu',
         'text-pink-600 dark:text-pink-400': currentKind() === 'Jimeng'

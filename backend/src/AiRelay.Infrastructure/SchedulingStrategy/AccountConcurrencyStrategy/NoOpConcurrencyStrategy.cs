@@ -53,4 +53,24 @@ public class NoOpConcurrencyStrategy : IConcurrencyStrategy
     {
         return Task.FromResult(true);
     }
+
+    public Task<bool> AcquireUserSlotAsync(Guid userId, Guid requestId, int maxConcurrency, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(true);
+    }
+
+    public Task ReleaseUserSlotAsync(Guid userId, Guid requestId, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> WaitForUserSlotAsync(
+        Guid userId,
+        Guid requestId,
+        int maxConcurrency,
+        TimeSpan timeout,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(true);
+    }
 }

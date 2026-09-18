@@ -1,23 +1,33 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
+import { finalize } from 'rxjs/operators';
 
 import { LayoutService } from '../../../../layout/services/layout-service';
 import { formatTokenCount } from '../../../../shared/utils/format.utils';
-import { ApiKeyOutputDto } from '../../../platform/models/subscription.dto';
-import { SubscriptionService } from '../../../platform/services/subscription-service';
 import { SubscriptionEditDialogComponent } from '../../../platform/components/subscriptions/widgets/subscription-edit-dialog/subscription-edit-dialog';
-import { finalize } from 'rxjs/operators';
+import { ApiKeyOutputDto, CreateApiKeyInputDto, UpdateApiKeyInputDto } from '../../../platform/models/subscription.dto';
+import { SubscriptionService } from '../../../platform/services/subscription-service';
 
 @Component({
   selector: 'app-workspace-my-subscriptions',
   standalone: true,
-  imports: [CommonModule, ButtonModule, CardModule, TagModule, TooltipModule, SubscriptionEditDialogComponent],
+  imports: [
+    CommonModule,
+    ButtonModule,
+    CardModule,
+    TagModule,
+    TooltipModule,
+    ConfirmDialogModule,
+    SubscriptionEditDialogComponent
+  ],
+  providers: [ConfirmationService],
   templateUrl: './workspace-my-subscriptions.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -26,6 +36,7 @@ export class WorkspaceMySubscriptionsPage {
   private readonly subscriptionService = inject(SubscriptionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   readonly loading = signal(true);
   readonly subscriptions = signal<ApiKeyOutputDto[]>([]);
@@ -43,7 +54,7 @@ export class WorkspaceMySubscriptionsPage {
   reload() {
     this.loading.set(true);
     this.subscriptionService
-      .getSubscriptions({ limit: 100, sorting: 'creationTime desc' })
+      .getSubscriptions({ limit: 100, sorting: 'creationTime desc', onlyCurrentUser: true })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(data => {
         this.subscriptions.set(data.items);
@@ -56,24 +67,83 @@ export class WorkspaceMySubscriptionsPage {
     this.dialogVisible.set(true);
   }
 
-  onSaveSubscription(payload: any) {
+  openEditDialog(item: ApiKeyOutputDto) {
+    this.selectedSubscription.set(item);
+    this.dialogVisible.set(true);
+  }
+
+  onSaveSubscription(payload: CreateApiKeyInputDto | UpdateApiKeyInputDto) {
     this.saving.set(true);
-    
-    this.subscriptionService
-      .createSubscription(payload)
+    const selected = this.selectedSubscription();
+    const request$ = selected
+      ? this.subscriptionService.updateSubscription(selected.id, payload)
+      : this.subscriptionService.createSubscription(payload as CreateApiKeyInputDto);
+
+    request$
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.saving.set(false))
       )
       .subscribe({
         next: () => {
-          this.messageService.add({ severity: 'success', summary: '成功', detail: '订阅已创建' });
+          this.messageService.add({
+            severity: 'success',
+            summary: '成功',
+            detail: selected ? '凭证已更新' : '订阅已创建'
+          });
           this.dialogVisible.set(false);
           this.reload();
-        },
-        error: err => {
-          this.messageService.add({ severity: 'error', summary: '错误', detail: err.error?.error?.message || '创建失败' });
         }
+      });
+  }
+
+  confirmDelete(item: ApiKeyOutputDto) {
+    this.confirmationService.confirm({
+      header: '确认删除',
+      icon: 'pi pi-exclamation-triangle',
+      message: `删除「${item.name}」后，使用此 Key 的应用会立刻失效，确定删除？`,
+      acceptLabel: '删除',
+      rejectLabel: '取消',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.subscriptionService
+          .deleteSubscription(item.id)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe(() => {
+            this.messageService.add({ severity: 'success', summary: '成功', detail: '凭证已删除' });
+            this.reload();
+          });
+      }
+    });
+  }
+
+  confirmToggleStatus(item: ApiKeyOutputDto) {
+    if (item.isActive) {
+      this.confirmationService.confirm({
+        header: '确认停用',
+        icon: 'pi pi-exclamation-triangle',
+        message: `停用「${item.name}」后，使用此 Key 的请求会被拒绝，确定停用？`,
+        acceptLabel: '停用',
+        rejectLabel: '取消',
+        accept: () => this.toggleStatus(item, false)
+      });
+      return;
+    }
+
+    this.toggleStatus(item, true);
+  }
+
+  private toggleStatus(item: ApiKeyOutputDto, isActive: boolean) {
+    this.subscriptionService
+      .toggleStatus(item.id, isActive)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.messageService.add({
+          severity: 'success',
+          summary: '成功',
+          detail: isActive ? '凭证已启用' : '凭证已停用'
+        });
+        this.reload();
       });
   }
 

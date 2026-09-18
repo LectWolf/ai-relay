@@ -5,6 +5,7 @@ export enum ModelVendor {
   Qwen = 'Qwen',
   Moonshot = 'Moonshot',
   DeepSeek = 'DeepSeek',
+  Grok = 'Grok',
   MiniMax = 'MiniMax',
   Zhipu = 'Zhipu',
   Jimeng = 'Jimeng'

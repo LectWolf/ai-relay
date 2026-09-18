@@ -31,7 +31,9 @@ public static class RouteProfileRegistry
         [RouteProfile.OpenAiResponses] = new RouteProfileDefinition("/v1/responses",
             [
                 (Provider.OpenAI, AuthMethod.OAuth),
-                (Provider.OpenAI, AuthMethod.ApiKey)
+                (Provider.OpenAI, AuthMethod.ApiKey),
+                (Provider.DeepSeek, AuthMethod.ApiKey),
+                (Provider.Grok, AuthMethod.ApiKey)
             ]),
 
         [RouteProfile.OpenAiCodex] = new RouteProfileDefinition("/backend-api/codex",
@@ -43,14 +45,17 @@ public static class RouteProfileRegistry
             [
                 (Provider.OpenAI, AuthMethod.OAuth),
                 (Provider.OpenAI, AuthMethod.ApiKey),
-                (Provider.OpenAICompatible, AuthMethod.ApiKey)
+                (Provider.OpenAICompatible, AuthMethod.ApiKey),
+                (Provider.DeepSeek, AuthMethod.ApiKey),
+                (Provider.Grok, AuthMethod.ApiKey)
             ]),
 
         [RouteProfile.ClaudeMessages] = new RouteProfileDefinition("/v1/messages",
             [
                 (Provider.Claude, AuthMethod.OAuth),
                 (Provider.Claude, AuthMethod.ApiKey),
-                (Provider.Antigravity, AuthMethod.OAuth)
+                (Provider.Antigravity, AuthMethod.OAuth),
+                (Provider.DeepSeek, AuthMethod.ApiKey)
             ])
     };
 }

@@ -139,7 +139,7 @@ export class GroupEditDialogComponent implements OnChanges {
       return false;
     }
 
-    if (!model.rateMultiplier || model.rateMultiplier < 0.01 || model.rateMultiplier > 100) {
+    if (model.rateMultiplier == null || Number.isNaN(model.rateMultiplier) || model.rateMultiplier < 0 || model.rateMultiplier > 100) {
       return false;
     }
 

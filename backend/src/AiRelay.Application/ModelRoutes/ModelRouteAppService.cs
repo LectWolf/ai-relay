@@ -17,6 +17,7 @@ using AiRelay.Domain.Shared.ExternalServices.ModelClient;
 using AiRelay.Domain.Shared.ExternalServices.ModelClient.Context;
 using AiRelay.Domain.Shared.ExternalServices.ModelClient.Dto;
 using AiRelay.Domain.UsageRecords.Options;
+using AiRelay.Domain.Users.Entities;
 using Leistd.Ddd.Application.AppService;
 using Leistd.Ddd.Domain.Repositories;
 using Leistd.Ddd.Infrastructure.Persistence.Repositories;
@@ -39,6 +40,7 @@ public class ModelRouteAppService(
     IProviderGroupAccountRelationRepository relationRepository,
     IRepository<ApiKeyProviderGroupBinding, Guid> apiKeyProviderGroupBindingRepository,
     IRepository<AccountToken, Guid> accountRepository,
+    IRepository<User, Guid> userRepository,
     IObjectMapper objectMapper,
     IConcurrencyStrategy concurrencyStrategy,
     IQueryableAsyncExecuter queryableAsyncExecuter,
@@ -224,6 +226,12 @@ public class ModelRouteAppService(
 
         var loggingDownRequestHeaders = _loggingOptions.IsBodyLoggingEnabled ? downRequestHeaders : null;
         var loggingDownRequestBody = _loggingOptions.IsBodyLoggingEnabled ? downRequestBody : null;
+
+        await using var userSlot = await TryAcquireUserSlotAsync(metadata.UserId, cancellationToken);
+        if (!userSlot.Acquired)
+        {
+            throw new ServiceUnavailableException(userSlot.FailureDescription ?? "用户并发已达上限，请稍后重试");
+        }
 
         usageRecordQueue.TryEnqueue(new UsageRecordStartItem(
             UsageRecordId: metadata.UsageRecordId,
@@ -990,6 +998,31 @@ public class ModelRouteAppService(
         await accountRepository.UpdateAsync(account, cancellationToken);
     }
 
+    private async Task<ConcurrencySlot> TryAcquireUserSlotAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty)
+            return new ConcurrencySlot(true);
+
+        var user = await userRepository.GetByIdAsync(userId, cancellationToken);
+        var maxConcurrency = user?.MaxConcurrency ?? 5;
+        if (maxConcurrency <= 0)
+            return new ConcurrencySlot(true);
+
+        var requestId = Guid.CreateVersion7();
+        if (await concurrencyStrategy.AcquireUserSlotAsync(userId, requestId, maxConcurrency, cancellationToken))
+            return new ConcurrencySlot(true, () => concurrencyStrategy.ReleaseUserSlotAsync(userId, requestId));
+
+        var timeout = TimeSpan.FromSeconds(_schedulingOptions.NonStickyWaitTimeoutSeconds);
+        if (await concurrencyStrategy.WaitForUserSlotAsync(userId, requestId, maxConcurrency, timeout, cancellationToken))
+            return new ConcurrencySlot(true, () => concurrencyStrategy.ReleaseUserSlotAsync(userId, requestId));
+
+        return new ConcurrencySlot(
+            false,
+            failureDescription: $"用户并发已达上限（{maxConcurrency}），请稍后重试");
+    }
+
     private async Task<ConcurrencySlot> TryAcquireReadySlotAsync(
         SelectAccountResultDto selectResult,
         Guid activeRequestId,
@@ -1148,9 +1181,9 @@ public class ModelRouteAppService(
     private static List<AccountToken> FilterAccountsByFormat(
         List<AccountToken> accounts, string format) => format switch
     {
-        "anthropic" => accounts.Where(a => a.Provider is Provider.Claude).ToList(),
+        "anthropic" => accounts.Where(a => a.Provider is Provider.Claude or Provider.DeepSeek).ToList(),
         "gemini"    => accounts.Where(a => a.Provider is Provider.Gemini).ToList(),
-        _           => accounts.Where(a => a.Provider is Provider.OpenAI or Provider.OpenAICompatible or Provider.Antigravity).ToList()
+        _           => accounts.Where(a => a.Provider is Provider.OpenAI or Provider.OpenAICompatible or Provider.Antigravity or Provider.DeepSeek or Provider.Grok).ToList()
     };
 
     private static ProxyModelsOutputDto BuildEmptyResponse(string format) =>

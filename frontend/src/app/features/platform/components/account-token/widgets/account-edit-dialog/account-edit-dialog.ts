@@ -12,6 +12,7 @@ import {
   signal
 } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -80,6 +81,8 @@ export class AccountEditDialogComponent implements OnChanges {
   accountService = inject(AccountTokenService);
   providerGroupService = inject(ProviderGroupService);
   cdr = inject(ChangeDetectorRef);
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly messageService = inject(MessageService);
 
   form: FormGroup;
   isEditMode = signal(false);
@@ -96,12 +99,14 @@ export class AccountEditDialogComponent implements OnChanges {
   filteredModels: string[] = [];
   availableModels: string[] = [];
   modelMappings: Array<{ from: string; to: string }> = [];
+  syncingModels = false;
 
   allProviderGroups = signal<ProviderGroupOutputDto[]>([]);
   filteredProviderGroups = signal<ProviderGroupOutputDto[]>([]);
   selectedProviderGroups = signal<ProviderGroupOutputDto[]>([]);
   dialogLoading = signal(false);
 
+  readonly Provider = Provider;
   providerOptions = PROVIDER_OPTIONS;
   authMethodOptions = AUTH_METHOD_OPTIONS;
   rateLimitScopeOptions = RATE_LIMIT_SCOPE_OPTIONS;
@@ -138,7 +143,7 @@ export class AccountEditDialogComponent implements OnChanges {
 
           this.form.get('allowOfficialClientMimic')?.setValue(true, { emitEvent: false });
           this.form.get('allowOfficialClientMimic')?.disable({ emitEvent: false });
-        } else if (val === Provider.OpenAICompatible) {
+        } else if (val === Provider.OpenAICompatible || val === Provider.DeepSeek || val === Provider.Grok) {
           this.form.get('authMethod')?.setValue(AuthMethod.ApiKey);
           this.form.get('authMethod')?.disable({ emitEvent: false });
 
@@ -396,6 +401,14 @@ export class AccountEditDialogComponent implements OnChanges {
     return this.currentProvider() === Provider.Gemini && this.currentAuthMethod() === AuthMethod.OAuth;
   }
 
+  get baseUrlPlaceholder(): string {
+    if (this.currentProvider() === Provider.DeepSeek)
+      return '默认 https://api.deepseek.com，可填自定义网关...';
+    if (this.currentProvider() === Provider.Grok)
+      return '默认 https://api.x.ai，可填自定义网关...';
+    return '默认官方地址，可填自定义网关...';
+  }
+
   onHide() {
     this.visibleChange.emit(false);
   }
@@ -592,6 +605,73 @@ export class AccountEditDialogComponent implements OnChanges {
 
   onWhitelistUnselect(event: { value: string }) {
     this.modelWhites = this.modelWhites.filter(m => m !== event.value);
+  }
+
+  clearModelWhites() {
+    if (this.modelWhites.length === 0) {
+      return;
+    }
+
+    this.confirmationService.confirm({
+      header: '清空白名单',
+      icon: 'pi pi-exclamation-triangle',
+      message: '清空后该账户默认允许全部模型。确定清空？',
+      acceptLabel: '清空',
+      rejectLabel: '取消',
+      accept: () => {
+        this.modelWhites = [];
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  syncUpstreamModels() {
+    if (!this.account?.id) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: '请先保存账户',
+        detail: '新建账户需要先保存，才能向真实上游拉取模型。'
+      });
+      return;
+    }
+
+    const apply = () => {
+      this.syncingModels = true;
+      this.cdr.markForCheck();
+      this.accountService
+        .syncUpstreamModels(this.account!.id)
+        .pipe(finalize(() => {
+          this.syncingModels = false;
+          this.cdr.markForCheck();
+        }))
+        .subscribe({
+          next: models => {
+            const ids = models.map(m => m.value).filter(Boolean);
+            this.availableModels = ids;
+            this.modelWhites = [...ids];
+            this.messageService.add({
+              severity: 'success',
+              summary: '同步完成',
+              detail: `已写入 ${ids.length} 个上游模型到白名单，保存后生效。`
+            });
+            this.cdr.markForCheck();
+          }
+        });
+    };
+
+    if (this.modelWhites.length === 0) {
+      apply();
+      return;
+    }
+
+    this.confirmationService.confirm({
+      header: '同步上游模型',
+      icon: 'pi pi-exclamation-triangle',
+      message: '将用上游模型列表覆盖当前白名单。确定同步？',
+      acceptLabel: '同步并覆盖',
+      rejectLabel: '取消',
+      accept: apply
+    });
   }
 
   addMappingRow() {

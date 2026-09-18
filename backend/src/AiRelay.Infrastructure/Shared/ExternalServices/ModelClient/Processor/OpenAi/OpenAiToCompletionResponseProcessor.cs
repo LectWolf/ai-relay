@@ -12,9 +12,10 @@ namespace AiRelay.Infrastructure.Shared.ExternalServices.ModelClient.Processor.O
 /// 保留 OriginalBytes（上游原始数据），设置 ConvertedBytes（转换后数据）
 /// 转换后的行各自追加 \n\n，空行及无转换结果一律不转发
 /// </summary>
-public class OpenAiToCompletionResponseProcessor(DownRequestContext down) : IResponseProcessor
+public class OpenAiToCompletionResponseProcessor(DownRequestContext down, bool convertFromResponses = true) : IResponseProcessor
 {
-    private readonly bool _isActive = down.IsStreaming
+    private readonly bool _isActive = convertFromResponses
+        && down.IsStreaming
         && down.RelativePath.Contains("/chat/completions", StringComparison.OrdinalIgnoreCase);
     private readonly ResponsesToCompletionsConverter _converter = new(
         down.ExtractedProps.TryGetValue("openai.include_usage", out var iuVal) && iuVal == "true");

@@ -55,6 +55,11 @@ public class User : FullAuditedEntity<Guid>
     public bool IsSuperAdmin { get; private set; }
 
     /// <summary>
+    /// 用户整体并发上限（所有 API Key / 工作区请求合计）。小于等于 0 表示不限制。
+    /// </summary>
+    public int MaxConcurrency { get; private set; } = 5;
+
+    /// <summary>
     /// 是否锁定
     /// </summary>
     public bool IsLocked { get; private set; }
@@ -92,6 +97,15 @@ public class User : FullAuditedEntity<Guid>
         Email = email;
         PasswordHash = passwordHash;
         Nickname = nickname ?? username;
+        MaxConcurrency = 5;
+    }
+
+    public void UpdateMaxConcurrency(int maxConcurrency)
+    {
+        if (maxConcurrency < 0)
+            throw new ArgumentOutOfRangeException(nameof(maxConcurrency), "并发上限不能为负数");
+
+        MaxConcurrency = maxConcurrency;
     }
 
     public void Update(string? nickname, string? phoneNumber, string? avatar)

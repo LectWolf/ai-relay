@@ -7,7 +7,9 @@ export const PROVIDER_LABELS: Record<Provider, string> = {
   [Provider.Claude]: 'Claude',
   [Provider.OpenAI]: 'OpenAI',
   [Provider.Antigravity]: 'Antigravity',
-  [Provider.OpenAICompatible]: 'OpenAI Compatible'
+  [Provider.OpenAICompatible]: 'OpenAI Compatible',
+  [Provider.DeepSeek]: 'DeepSeek',
+  [Provider.Grok]: 'Grok'
 };
 
 export const PROVIDER_OPTIONS = Object.entries(PROVIDER_LABELS).map(([value, label]) => ({

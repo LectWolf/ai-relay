@@ -3,6 +3,7 @@ using AiRelay.Domain.Shared.ExternalServices.ModelClient.Context;
 using AiRelay.Domain.Shared.ExternalServices.ModelClient.Dto;
 using AiRelay.Domain.Shared.ExternalServices.ModelClient.Processor;
 using AiRelay.Domain.Shared.ExternalServices.ModelProvider;
+using AiRelay.Domain.Shared.ExternalServices.ModelProvider.Dto;
 using AiRelay.Infrastructure.Shared.ExternalServices.ModelClient.Processor.Common;
 using AiRelay.Infrastructure.Shared.ExternalServices.ModelClient.Processor.OpenAi;
 using AiRelay.Infrastructure.Shared.ExternalServices.ModelClient.Cleaning;
@@ -24,15 +25,59 @@ public class OpenAiChatModelHandler(
     public override bool Supports(Provider provider, AuthMethod authMethod) =>
         provider == Provider.OpenAI && (authMethod == AuthMethod.OAuth || authMethod == AuthMethod.ApiKey);
 
+    public override async Task<IReadOnlyList<ModelOption>?> GetModelsAsync(CancellationToken ct = default)
+    {
+        if (Options.AuthMethod != AuthMethod.ApiKey)
+        {
+            return null;
+        }
+
+        var down = new DownRequestContext
+        {
+            Method = HttpMethod.Get,
+            RelativePath = "/v1/models"
+        };
+
+        var up = await ProcessRequestContextAsync(down, 0, ct);
+        using var response = await SendCoreRequestAsync(up, down, ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            Logger.LogWarning("OpenAI 上游模型拉取失败: {StatusCode}", response.StatusCode);
+            return null;
+        }
+
+        var json = await response.Content.ReadAsStringAsync(ct);
+        using var doc = JsonDocument.Parse(json);
+        var models = new List<ModelOption>();
+
+        if (doc.RootElement.TryGetProperty("data", out var dataArray) && dataArray.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in dataArray.EnumerateArray())
+            {
+                if (item.TryGetProperty("id", out var idProp))
+                {
+                    var modelId = idProp.GetString();
+                    if (!string.IsNullOrEmpty(modelId))
+                    {
+                        models.Add(new ModelOption(modelId, modelId));
+                    }
+                }
+            }
+        }
+
+        return models.Count > 0 ? models : null;
+    }
+
     protected override IReadOnlyList<IResponseProcessor> GetResponseProcessors(
         UpRequestContext up, DownRequestContext down)
     {
+        var convertFromResponses = (up.RelativePath ?? "").Contains("/responses", StringComparison.OrdinalIgnoreCase);
         return
         [
             new OpenAiParseSseResponseProcessor(),
             new UsageAccumulatorResponseProcessor(),
-            new OpenAiToCompletionResponseProcessor(down),
-            new OpenAiBufferedChatResponseProcessor(down)
+            new OpenAiToCompletionResponseProcessor(down, convertFromResponses),
+            new OpenAiBufferedChatResponseProcessor(down, convertFromResponses)
         ];
     }
     public override DownRequestContext CreateChatDownContext(ChatDownContextInput input)

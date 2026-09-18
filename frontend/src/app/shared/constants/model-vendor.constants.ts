@@ -7,6 +7,7 @@ export const MODEL_VENDOR_LABELS: Record<ModelVendor, string> = {
   [ModelVendor.Qwen]: '通义千问',
   [ModelVendor.Moonshot]: 'Moonshot',
   [ModelVendor.DeepSeek]: 'DeepSeek',
+  [ModelVendor.Grok]: 'Grok',
   [ModelVendor.MiniMax]: 'MiniMax',
   [ModelVendor.Zhipu]: 'Zhipu',
   [ModelVendor.Jimeng]: '即梦'

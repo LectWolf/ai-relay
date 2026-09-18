@@ -24,6 +24,13 @@ public interface IAccountTokenAppService : IAppService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 强制从上游拉取模型列表（忽略缓存和现有白名单）
+    /// </summary>
+    Task<IReadOnlyList<ModelOptionOutputDto>> SyncUpstreamModelsAsync(
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 获取账户分页列表
     /// </summary>
     Task<PagedResultDto<AccountTokenOutputDto>> GetPagedListAsync(

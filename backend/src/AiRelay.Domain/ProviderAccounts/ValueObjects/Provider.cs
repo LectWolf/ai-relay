@@ -9,5 +9,7 @@ public enum Provider
     Claude,
     OpenAI,
     Antigravity,
-    OpenAICompatible
+    OpenAICompatible,
+    DeepSeek,
+    Grok
 }

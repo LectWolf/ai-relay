@@ -37,6 +37,12 @@
           <p-select [options]="authMethodOptions" formControlName="authMethod" optionLabel="label" optionValue="value" appendTo="body" [fluid]="true" />
         </div>
       </div>
+      @if (currentProvider() === Provider.DeepSeek) {
+        <small class="text-muted-color">一把 Key 同时转发 Chat Completions、Responses、Claude Messages。</small>
+      }
+      @if (currentProvider() === Provider.Grok) {
+        <small class="text-muted-color">一把 Key 同时转发 Chat Completions、Responses。</small>
+      }
 
       @if (!showOAuthFlow) {
         <div class="grid grid-cols-1 gap-4 md:grid-cols-4 md:gap-x-6">
@@ -63,7 +69,7 @@
 
           <div class="flex flex-col gap-2 md:col-span-4">
             <label class="block text-sm font-medium text-color">上游地址</label>
-            <input pInputText formControlName="baseUrl" placeholder="默认官方地址，可填自定义网关..." class="w-full font-mono" />
+            <input pInputText formControlName="baseUrl" [placeholder]="baseUrlPlaceholder" class="w-full font-mono" />
             @if (form.get('baseUrl')?.invalid && form.get('baseUrl')?.touched) {
               <small class="text-red-500">上游地址格式不正确 (需以 http:// 或 https:// 开头)</small>
             }
@@ -146,7 +152,31 @@
         <p-panel header="模型配置" [toggleable]="true" [collapsed]="true">
           <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
-              <label class="text-sm font-medium text-color">模型白名单</label>
+              <div class="flex items-center justify-between gap-3">
+                <label class="text-sm font-medium text-color">模型白名单</label>
+                <div class="flex items-center gap-1">
+                  <p-button
+                    icon="pi pi-sync"
+                    label="同步上游"
+                    [text]="true"
+                    size="small"
+                    [loading]="syncingModels"
+                    [disabled]="saving || dialogLoading()"
+                    pTooltip="从上游 /models 拉取并覆盖白名单。新建账户请先保存。"
+                    tooltipPosition="top"
+                    (onClick)="syncUpstreamModels()" />
+                  <p-button
+                    icon="pi pi-times"
+                    label="清空"
+                    [text]="true"
+                    severity="secondary"
+                    size="small"
+                    [disabled]="saving || dialogLoading() || modelWhites.length === 0"
+                    pTooltip="清空白名单后默认允许全部模型"
+                    tooltipPosition="top"
+                    (onClick)="clearModelWhites()" />
+                </div>
+              </div>
               <p-autoComplete
                 [(ngModel)]="modelWhites"
                 [ngModelOptions]="{standalone: true}"

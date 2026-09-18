@@ -23,11 +23,18 @@ public class OpenAiModifyBodyRequestProcessor(ChatModelConnectionOptions options
         // 因为 OpenAiUrlRequestProcessor 已将 up.RelativePath 统一改写为 /v1/responses
         bool isChatRoute = down.RelativePath.Contains("/chat/completions", StringComparison.OrdinalIgnoreCase);
         bool isOAuth = options.AuthMethod == AuthMethod.OAuth;
+        // API Key 的 chat completions 直连上游，不再转成 Responses
+        bool passthroughChatCompletions = isChatRoute && !isOAuth;
         bool needChangeModel = !string.IsNullOrEmpty(up.MappedModelId) &&
             (up.MappedModelId != (down.ResolvedModelId ?? down.ModelId) || down.ResolvedModelId != null);
 
         // 如果既不是聊天生成接口，又不是 OAuth 需要调整参数，且无需修改模型，则直接走零分配转发，无需解析 JSON
         if (!isChatRoute && !isOAuth && !needChangeModel)
+        {
+            return;
+        }
+
+        if (passthroughChatCompletions && !needChangeModel)
         {
             return;
         }
@@ -42,8 +49,8 @@ public class OpenAiModifyBodyRequestProcessor(ChatModelConnectionOptions options
 
         var clonedBody = await up.EnsureMutableBodyAsync(down);
 
-        // 格式转换：Chat Completions → Responses API
-        if (ChatCompletionsConverter.IsChatCompletionsFormat(clonedBody))
+        // 格式转换：Chat Completions → Responses API（OAuth / Responses 上游才转）
+        if (!passthroughChatCompletions && ChatCompletionsConverter.IsChatCompletionsFormat(clonedBody))
         {
             clonedBody = ChatCompletionsConverter.ConvertRequestBody(clonedBody);
             up.BodyJson = clonedBody; // 转换后必须回写，ConvertRequestBody 返回全新对象

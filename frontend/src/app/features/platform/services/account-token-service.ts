@@ -97,6 +97,10 @@ export class AccountTokenService {
     });
   }
 
+  syncUpstreamModels(id: string): Observable<ModelOptionOutputDto[]> {
+    return this.http.post<ModelOptionOutputDto[]>(`${this.baseUrl}/${id}/sync-models`, {});
+  }
+
   debugModel(id: string, input: ChatMessageInputDto): Observable<ChatStreamEvent> {
     return new Observable(observer => {
       const controller = new AbortController();

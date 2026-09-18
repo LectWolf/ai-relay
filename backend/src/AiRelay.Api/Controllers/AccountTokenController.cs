@@ -69,6 +69,17 @@ public class AccountTokenController(IAccountTokenAppService accountTokenAppServi
         return Ok(models);
     }
 
+    /// <summary>
+    /// 强制从上游同步模型列表
+    /// </summary>
+    [HttpPost("{id}/sync-models")]
+    public Task<IReadOnlyList<ModelOptionOutputDto>> SyncUpstreamModelsAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return accountTokenAppService.SyncUpstreamModelsAsync(id, cancellationToken);
+    }
+
     [HttpGet("oauth-url")]
     public Task<OAuthUrlOutputDto> GetAuthUrl([FromQuery] GetAuthUrlInputDto input)
     {

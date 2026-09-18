@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, SecurityContext, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DomSanitizer } from '@angular/platform-browser';
+import MarkdownIt from 'markdown-it';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -17,15 +19,60 @@ import { SystemUpdateService } from '../../services/system-update-service';
   imports: [CommonModule, CardModule, ButtonModule, TagModule, ConfirmDialogModule],
   providers: [ConfirmationService],
   templateUrl: './settings.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [
+    `
+      .release-markdown {
+        color: inherit;
+        line-height: 1.7;
+        word-break: break-word;
+      }
+      .release-markdown > :first-child { margin-top: 0; }
+      .release-markdown > :last-child { margin-bottom: 0; }
+      .release-markdown p,
+      .release-markdown ul,
+      .release-markdown ol,
+      .release-markdown pre,
+      .release-markdown blockquote,
+      .release-markdown h1,
+      .release-markdown h2,
+      .release-markdown h3 { margin: 0 0 0.75rem; }
+      .release-markdown ul,
+      .release-markdown ol { padding-left: 1.25rem; }
+      .release-markdown pre {
+        overflow: auto;
+        border-radius: 0.75rem;
+        background: color-mix(in srgb, var(--p-surface-900) 88%, transparent);
+        padding: 0.75rem 1rem;
+        color: var(--p-surface-0);
+      }
+      .release-markdown code {
+        font-family: 'JetBrains Mono', 'Consolas', monospace;
+        font-size: 0.9em;
+      }
+      .release-markdown :not(pre) > code {
+        border-radius: 0.4rem;
+        background: color-mix(in srgb, var(--p-surface-400) 12%, transparent);
+        padding: 0.12rem 0.32rem;
+      }
+      .release-markdown a { color: var(--p-primary-color); }
+    `
+  ]
 })
 export class Settings implements OnInit {
   private readonly service = inject(SystemUpdateService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly sanitizer = inject(DomSanitizer);
+  private readonly markdown = new MarkdownIt({ html: false, linkify: true, typographer: true, breaks: true });
 
   readonly info = signal<SystemUpdateInfoDto | null>(null);
+  readonly releaseNotesHtml = computed(() => {
+    const body = this.info()?.releaseInfo?.body;
+    if (!body) return '';
+    return this.sanitizer.sanitize(SecurityContext.HTML, this.markdown.render(body)) ?? '';
+  });
   readonly loading = signal(false);
   readonly updating = signal(false);
   readonly restarting = signal(false);

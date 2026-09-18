@@ -3,5 +3,7 @@ export enum Provider {
   Claude = 'Claude',
   OpenAI = 'OpenAI',
   Antigravity = 'Antigravity',
-  OpenAICompatible = 'OpenAICompatible'
+  OpenAICompatible = 'OpenAICompatible',
+  DeepSeek = 'DeepSeek',
+  Grok = 'Grok'
 }

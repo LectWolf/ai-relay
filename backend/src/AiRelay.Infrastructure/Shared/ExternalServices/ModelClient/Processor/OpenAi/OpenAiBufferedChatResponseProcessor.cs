@@ -14,9 +14,10 @@ namespace AiRelay.Infrastructure.Shared.ExternalServices.ModelClient.Processor.O
 /// 逐行消费 Responses API SSE，从 response.completed 提取终态，
 /// 在流结束时拼装单个 Chat Completions JSON 响应写入 ConvertedBytes。
 /// </summary>
-public class OpenAiBufferedChatResponseProcessor(DownRequestContext down) : IResponseProcessor
+public class OpenAiBufferedChatResponseProcessor(DownRequestContext down, bool convertFromResponses = true) : IResponseProcessor
 {
-    private readonly bool _isActive = !down.IsStreaming
+    private readonly bool _isActive = convertFromResponses
+        && !down.IsStreaming
         && down.RelativePath.Contains("/chat/completions", StringComparison.OrdinalIgnoreCase);
 
     private string _id = GenerateChatCmplId();

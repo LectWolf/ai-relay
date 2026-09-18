@@ -31,6 +31,7 @@ internal static class IdentityEntityConfiguration
             b.Property(e => e.Nickname).HasMaxLength(128);
             b.Property(e => e.LastLoginIp).HasMaxLength(45);
             b.Property(e => e.IsSuperAdmin);
+            b.Property(e => e.MaxConcurrency).IsRequired().HasDefaultValue(5);
 
             b.HasIndex(e => e.Username).IsUnique();
             b.HasIndex(e => e.Email).IsUnique();

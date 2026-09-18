@@ -125,6 +125,23 @@
 
         <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="flex flex-col gap-2 md:col-span-2">
+            <label class="text-sm font-medium text-color">整体并发</label>
+            <p-inputNumber
+              formControlName="maxConcurrency"
+              [min]="0"
+              [max]="1000"
+              [showButtons]="true"
+              buttonLayout="horizontal"
+              [fluid]="true"
+              inputStyleClass="text-center font-mono"
+            />
+            <small class="text-muted-color">该用户所有 API Key / 工作区请求合计上限。0 表示不限制，默认 5。</small>
+            @if (form.controls.maxConcurrency.invalid && form.controls.maxConcurrency.touched) {
+              <small class="text-red-500">并发需为 0-1000 的整数</small>
+            }
+          </div>
+
+          <div class="flex flex-col gap-2 md:col-span-2">
             <label class="text-sm font-medium text-color">角色</label>
             <p-multiselect
               formControlName="roles"

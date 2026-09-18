@@ -18,6 +18,8 @@ public class ChatModelHandlerFactory(IServiceProvider serviceProvider) : IChatMo
         [(Provider.Gemini, AuthMethod.OAuth)]  = typeof(GeminiAccountChatModelHandler),
         [(Provider.Gemini, AuthMethod.ApiKey)] = typeof(GeminiApiChatModelHandler),
         [(Provider.OpenAICompatible, AuthMethod.ApiKey)] = typeof(OpenAiCompatibleChatModelHandler),
+        [(Provider.DeepSeek, AuthMethod.ApiKey)] = typeof(DeepSeekChatModelHandler),
+        [(Provider.Grok, AuthMethod.ApiKey)] = typeof(GrokChatModelHandler),
     };
 
     /// <summary>

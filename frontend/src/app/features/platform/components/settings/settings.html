@@ -51,10 +51,10 @@
           </div>
         }
 
-        @if (current.releaseInfo?.body) {
+        @if (releaseNotesHtml()) {
           <div>
             <p class="text-sm font-semibold text-color m-0 mb-2">更新说明</p>
-            <pre class="whitespace-pre-wrap text-sm text-muted-color m-0 font-sans">{{ current.releaseInfo?.body }}</pre>
+            <div class="release-markdown text-sm text-muted-color" [innerHTML]="releaseNotesHtml()"></div>
           </div>
         }
 

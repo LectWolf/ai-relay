@@ -4,6 +4,7 @@ import { UserManagementOutputDto } from '../../src/app/features/platform/models/
 export interface MockUser extends UserOutputDto {
   password: string;
   isEmailVerified: boolean;
+  maxConcurrency: number;
   lastLoginTime?: string;
 }
 
@@ -17,6 +18,7 @@ export const USERS: MockUser[] = [
     phoneNumber: '13800000000',
     isActive: true,
     isSuperAdmin: true,
+    maxConcurrency: 0,
     isEmailVerified: true,
     creationTime: '2024-01-01T00:00:00Z',
     lastLoginTime: '2026-05-08T09:30:00Z',
@@ -32,6 +34,7 @@ export const USERS: MockUser[] = [
     phoneNumber: '13900000000',
     isActive: true,
     isSuperAdmin: false,
+    maxConcurrency: 5,
     isEmailVerified: true,
     creationTime: '2024-06-01T00:00:00Z',
     lastLoginTime: '2026-05-07T15:12:00Z',
@@ -47,6 +50,7 @@ export const USERS: MockUser[] = [
     phoneNumber: '13700000000',
     isActive: true,
     isSuperAdmin: false,
+    maxConcurrency: 5,
     isEmailVerified: false,
     creationTime: '2025-03-12T08:00:00Z',
     roles: ['Operator'],
@@ -61,6 +65,7 @@ export const USERS: MockUser[] = [
     phoneNumber: '13600000000',
     isActive: false,
     isSuperAdmin: false,
+    maxConcurrency: 5,
     isEmailVerified: true,
     creationTime: '2025-09-20T10:20:00Z',
     lastLoginTime: '2026-01-03T11:45:00Z',
@@ -85,6 +90,7 @@ export function toUserManagementOutput(user: MockUser): UserManagementOutputDto 
     isEmailVerified: user.isEmailVerified,
     roles: user.roles,
     isSuperAdmin: user.isSuperAdmin,
+    maxConcurrency: user.maxConcurrency,
     creationTime: user.creationTime,
     lastLoginTime: user.lastLoginTime
   };

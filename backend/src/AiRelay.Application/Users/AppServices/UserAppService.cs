@@ -99,6 +99,7 @@ public class UserAppService(
         var roles = await GetRolesByNamesAsync(input.Roles, cancellationToken);
         var user = await userDomainService.CreateUserAsync(username, email, input.Password, displayName, cancellationToken);
         user.UpdateManagement(email, displayName, input.Avatar?.Trim(), input.IsActive, input.IsEmailVerified);
+        user.UpdateMaxConcurrency(input.MaxConcurrency);
         await userRepository.UpdateAsync(user, cancellationToken);
         await AssignRolesAsync(user.Id, roles, cancellationToken);
 
@@ -127,6 +128,7 @@ public class UserAppService(
 
         var roles = await GetRolesByNamesAsync(input.Roles, cancellationToken);
         user.UpdateManagement(email, input.DisplayName?.Trim(), input.Avatar?.Trim(), input.IsActive, input.IsEmailVerified);
+        user.UpdateMaxConcurrency(input.MaxConcurrency);
         await userRepository.UpdateAsync(user, cancellationToken);
         await ReplaceRolesAsync(user.Id, roles, cancellationToken);
 

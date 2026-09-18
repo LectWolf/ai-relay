@@ -8,6 +8,7 @@ public class RedisConcurrencyStrategy(IConnectionMultiplexer connectionMultiplex
     private readonly IDatabase _database = connectionMultiplexer.GetDatabase();
     private const string AccountSlotKeyPrefix = "concurrency:account:";
     private const string AccountWaitKeyPrefix = "wait:account:";
+    private const string UserSlotKeyPrefix = "concurrency:user:";
     private const int SlotTtlSeconds = 1800; // 30 minutes
     private const int WaitQueueTtlSeconds = 1800; // 30 minutes
 
@@ -104,11 +105,15 @@ public class RedisConcurrencyStrategy(IConnectionMultiplexer connectionMultiplex
         return 1
     ");
 
-    public async Task<bool> AcquireSlotAsync(Guid accountTokenId, Guid requestId, int maxConcurrency, CancellationToken cancellationToken = default)
+    public Task<bool> AcquireSlotAsync(Guid accountTokenId, Guid requestId, int maxConcurrency, CancellationToken cancellationToken = default)
+        => AcquireByKeyAsync(GetAccountKey(accountTokenId), requestId, maxConcurrency, cancellationToken);
+
+    public Task<bool> AcquireUserSlotAsync(Guid userId, Guid requestId, int maxConcurrency, CancellationToken cancellationToken = default)
+        => AcquireByKeyAsync(GetUserKey(userId), requestId, maxConcurrency, cancellationToken);
+
+    private async Task<bool> AcquireByKeyAsync(string key, Guid requestId, int maxConcurrency, CancellationToken cancellationToken)
     {
         if (maxConcurrency <= 0) return true;
-
-        var key = GetAccountKey(accountTokenId);
 
         var result = await _database.ScriptEvaluateAsync(AcquireScript, new
         {
@@ -121,9 +126,14 @@ public class RedisConcurrencyStrategy(IConnectionMultiplexer connectionMultiplex
         return (int)result == 1;
     }
 
-    public async Task ReleaseSlotAsync(Guid accountTokenId, Guid requestId, CancellationToken cancellationToken = default)
+    public Task ReleaseSlotAsync(Guid accountTokenId, Guid requestId, CancellationToken cancellationToken = default)
+        => ReleaseByKeyAsync(GetAccountKey(accountTokenId), requestId);
+
+    public Task ReleaseUserSlotAsync(Guid userId, Guid requestId, CancellationToken cancellationToken = default)
+        => ReleaseByKeyAsync(GetUserKey(userId), requestId);
+
+    private async Task ReleaseByKeyAsync(string key, Guid requestId)
     {
-        var key = GetAccountKey(accountTokenId);
 
         await _database.ScriptEvaluateAsync(ReleaseScript, new
         {
@@ -214,12 +224,23 @@ public class RedisConcurrencyStrategy(IConnectionMultiplexer connectionMultiplex
             _database.KeyDeleteAsync((RedisKey)waitKey));
     }
 
-    public async Task<bool> WaitForSlotAsync(
+    public Task<bool> WaitForSlotAsync(
         Guid accountTokenId,
         Guid requestId,
         int maxConcurrency,
         TimeSpan timeout,
         CancellationToken cancellationToken = default)
+        => WaitAsync(() => AcquireSlotAsync(accountTokenId, requestId, maxConcurrency, cancellationToken), timeout, cancellationToken);
+
+    public Task<bool> WaitForUserSlotAsync(
+        Guid userId,
+        Guid requestId,
+        int maxConcurrency,
+        TimeSpan timeout,
+        CancellationToken cancellationToken = default)
+        => WaitAsync(() => AcquireUserSlotAsync(userId, requestId, maxConcurrency, cancellationToken), timeout, cancellationToken);
+
+    private static async Task<bool> WaitAsync(Func<Task<bool>> acquire, TimeSpan timeout, CancellationToken cancellationToken)
     {
         const int InitialBackoffMs = 100;
         const int MaxBackoffMs = 2000;
@@ -232,18 +253,12 @@ public class RedisConcurrencyStrategy(IConnectionMultiplexer connectionMultiplex
 
         while (DateTime.UtcNow - startTime < timeout)
         {
-            if (await AcquireSlotAsync(accountTokenId, requestId, maxConcurrency, cancellationToken))
-            {
+            if (await acquire())
                 return true;
-            }
 
-            // 计算抖动：±20%
             var jitter = backoffMs * JitterPercent * (random.NextDouble() * 2 - 1);
             var actualDelay = (int)(backoffMs + jitter);
-
             await Task.Delay(actualDelay, cancellationToken);
-
-            // 指数退避
             backoffMs = (int)Math.Min(backoffMs * BackoffMultiplier, MaxBackoffMs);
         }
 
@@ -251,6 +266,7 @@ public class RedisConcurrencyStrategy(IConnectionMultiplexer connectionMultiplex
     }
 
     private static string GetAccountKey(Guid accountTokenId) => $"{AccountSlotKeyPrefix}{accountTokenId}";
+    private static string GetUserKey(Guid userId) => $"{UserSlotKeyPrefix}{userId}";
     private static string GetWaitKey(Guid accountTokenId) => $"{AccountWaitKeyPrefix}{accountTokenId}";
 }
 

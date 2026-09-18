@@ -384,12 +384,20 @@ public class AccountTokenDomainService(
     /// <summary>
     /// 拉取上游模型列表并写入缓存（供 UI 展示调用，允许 IO）
     /// </summary>
-    public async Task<IReadOnlyList<string>?> FetchAndCacheUpstreamModelsAsync(AccountToken account, CancellationToken ct = default)
+    public async Task<IReadOnlyList<string>?> FetchAndCacheUpstreamModelsAsync(
+        AccountToken account,
+        CancellationToken ct = default,
+        bool forceRefresh = false)
     {
         // 1. 优先尝试从缓存获取（增加异常保护，确保缓存组件故障不影响业务）
         try
         {
-            var cachedValue = await cache.GetStringAsync(CacheKey(account.Id), ct);
+            if (forceRefresh)
+            {
+                await cache.RemoveAsync(CacheKey(account.Id), ct);
+            }
+
+            var cachedValue = forceRefresh ? null : await cache.GetStringAsync(CacheKey(account.Id), ct);
             if (!string.IsNullOrEmpty(cachedValue))
             {
                 // 命中负面缓存哨兵：上游在 NegativeCacheTtl 窗口内已知失败，
@@ -426,8 +434,8 @@ public class AccountTokenDomainService(
                 account.BaseUrl,
                 account.ExtraProperties,
                 shouldMimicOfficialClient: true,
-                modelWhites: account.ModelWhites,
-                modelMapping: account.ModelMapping);
+                modelWhites: forceRefresh ? null : account.ModelWhites,
+                modelMapping: forceRefresh ? null : account.ModelMapping);
 
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             cts.CancelAfter(TimeSpan.FromSeconds(10));

@@ -173,7 +173,7 @@
                   <div class="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-color">
                       <span>账户数 {{ group?.accountCount || 0 }}</span>
-                      <span>费率 {{ (group?.rateMultiplier ?? 1) | number: '1.1-2' }}x</span>
+                      <span>费率 {{ (group?.rateMultiplier ?? 1) | number: '1.0-3' }}x</span>
                       <span>粘性超时 {{ getStickySessionSummary(group) }}</span>
                     </div>
 

@@ -25,5 +25,9 @@ public record UpdateUserInputDto
 
     public bool IsEmailVerified { get; init; }
 
+    [Display(Name = "整体并发")]
+    [Range(0, 1000, ErrorMessage = "{0}必须在{1}-{2}之间")]
+    public int MaxConcurrency { get; init; } = 5;
+
     public List<string> Roles { get; init; } = [];
 }

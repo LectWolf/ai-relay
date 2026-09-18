@@ -15,7 +15,9 @@ const DEFAULT_CATALOG_VENDORS: Record<Provider, ModelVendor[]> = {
   [Provider.Claude]: [ModelVendor.Anthropic],
   [Provider.OpenAI]: [ModelVendor.OpenAI],
   [Provider.Antigravity]: [],
-  [Provider.OpenAICompatible]: [ModelVendor.Qwen, ModelVendor.Moonshot, ModelVendor.DeepSeek, ModelVendor.MiniMax, ModelVendor.Zhipu, ModelVendor.Jimeng]
+  [Provider.OpenAICompatible]: [ModelVendor.Qwen, ModelVendor.Moonshot, ModelVendor.DeepSeek, ModelVendor.MiniMax, ModelVendor.Zhipu, ModelVendor.Jimeng],
+  [Provider.DeepSeek]: [ModelVendor.DeepSeek],
+  [Provider.Grok]: [ModelVendor.Grok]
 };
 
 function maskToken(token: string | undefined): string {
@@ -134,6 +136,14 @@ function getMockUpstreamModels(account: any) {
 
   if (account.provider === Provider.OpenAICompatible) {
     return ['Qwen/Qwen3.6-plus', 'Qwen/Qwen3.5-plus', 'deepseek-v4-pro', 'kimi-k2.6'];
+  }
+
+  if (account.provider === Provider.DeepSeek) {
+    return ['deepseek-flash', 'deepseek-v4-pro'];
+  }
+
+  if (account.provider === Provider.Grok) {
+    return ['grok-4.6', 'grok-4', 'grok-3'];
   }
 
   return null;

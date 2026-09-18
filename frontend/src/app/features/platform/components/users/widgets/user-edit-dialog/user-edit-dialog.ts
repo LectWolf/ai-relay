@@ -6,6 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { PasswordModule } from 'primeng/password';
@@ -29,6 +30,7 @@ const PASSWORD_RULE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,20}$
     AvatarModule,
     FileUploadModule,
     InputTextModule,
+    InputNumberModule,
     PasswordModule,
     ToggleSwitchModule,
     MultiSelectModule,
@@ -79,6 +81,7 @@ export class UserEditDialogComponent {
     password: ['', [Validators.required, Validators.pattern(PASSWORD_RULE)]],
     isActive: [true],
     isEmailVerified: [false],
+    maxConcurrency: [5, [Validators.required, Validators.min(0), Validators.max(1000)]],
     roles: [['Member'], [Validators.required]]
   });
 
@@ -96,6 +99,7 @@ export class UserEditDialogComponent {
         password: '',
         isActive: user?.isActive ?? true,
         isEmailVerified: user?.isEmailVerified ?? false,
+        maxConcurrency: user?.maxConcurrency ?? 5,
         roles: user ? [...user.roles] : ['Member']
       });
       this.avatarPreview.set(avatar);
@@ -158,6 +162,7 @@ export class UserEditDialogComponent {
         avatar: model.avatar.trim() || undefined,
         isActive: model.isActive,
         isEmailVerified: model.isEmailVerified,
+        maxConcurrency: model.maxConcurrency,
         roles: model.roles
       });
       return;
@@ -171,6 +176,7 @@ export class UserEditDialogComponent {
       password: model.password,
       isActive: model.isActive,
       isEmailVerified: model.isEmailVerified,
+      maxConcurrency: model.maxConcurrency,
       roles: model.roles
     });
   }

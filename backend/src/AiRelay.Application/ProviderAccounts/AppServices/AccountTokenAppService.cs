@@ -225,6 +225,37 @@ public class AccountTokenAppService(
         return objectMapper.Map<IReadOnlyList<ModelOption>, IReadOnlyList<ModelOptionOutputDto>>(fallbackModels);
     }
 
+    public async Task<IReadOnlyList<ModelOptionOutputDto>> SyncUpstreamModelsAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var accountToken = await accountTokenRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw new NotFoundException($"账户不存在: {id}");
+
+        var modelIds = await accountTokenDomainService.FetchAndCacheUpstreamModelsAsync(
+            accountToken,
+            cancellationToken,
+            forceRefresh: true);
+
+        if (modelIds == null || modelIds.Count == 0)
+        {
+            throw new BadRequestException("未能从上游拉取到模型，请检查服务商、密钥和上游地址");
+        }
+
+        var options = modelIds
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(id => new ModelOption(id, id))
+            .ToList();
+
+        logger.LogInformation(
+            "同步上游模型成功: AccountId={AccountId}, Provider={Provider}, Count={Count}",
+            accountToken.Id,
+            accountToken.Provider,
+            options.Count);
+
+        return objectMapper.Map<IReadOnlyList<ModelOption>, IReadOnlyList<ModelOptionOutputDto>>(options);
+    }
+
     private static IReadOnlyList<ModelOption> BuildWhitelistModelOptions(
         IReadOnlyList<string> whitelist,
         IReadOnlyList<ModelOption> baselineModels,

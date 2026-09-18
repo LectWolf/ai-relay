@@ -42,6 +42,10 @@ export class AccountDetailDialogComponent {
         return 'text-emerald-600 dark:text-emerald-500';
       case Provider.Antigravity:
         return 'text-purple-600 dark:text-purple-400';
+      case Provider.DeepSeek:
+        return 'text-emerald-500 dark:text-emerald-300';
+      case Provider.Grok:
+        return 'text-slate-700 dark:text-slate-200';
       default:
         return 'text-muted-color';
     }

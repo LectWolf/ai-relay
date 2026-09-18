@@ -83,4 +83,15 @@ public interface IConcurrencyStrategy
         int maxConcurrency,
         TimeSpan timeout,
         CancellationToken cancellationToken = default);
+
+    Task<bool> AcquireUserSlotAsync(Guid userId, Guid requestId, int maxConcurrency, CancellationToken cancellationToken = default);
+
+    Task ReleaseUserSlotAsync(Guid userId, Guid requestId, CancellationToken cancellationToken = default);
+
+    Task<bool> WaitForUserSlotAsync(
+        Guid userId,
+        Guid requestId,
+        int maxConcurrency,
+        TimeSpan timeout,
+        CancellationToken cancellationToken = default);
 }

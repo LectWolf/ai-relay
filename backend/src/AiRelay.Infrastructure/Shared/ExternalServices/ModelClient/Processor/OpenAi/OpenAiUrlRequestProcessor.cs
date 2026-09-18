@@ -14,22 +14,44 @@ public class OpenAiUrlRequestProcessor(ChatModelConnectionOptions options) : IRe
             ? options.BaseUrl
             : options.AuthMethod == AuthMethod.OAuth ? "https://chatgpt.com" : "https://api.openai.com";
 
-        // 统一转换为 Responses API 路径
-        var relativePath = options.AuthMethod == AuthMethod.OAuth
-            ? "/backend-api/codex/responses"
-            : "/v1/responses";
-
-        // 保留 /responses/ 后的子路径（如 /responses/compact）
         var downPath = down.RelativePath?.Trim() ?? "";
-        if (downPath.Contains("/responses/"))
+
+        if (options.AuthMethod == AuthMethod.OAuth)
         {
-            var idx = downPath.IndexOf("/responses/", StringComparison.Ordinal);
-            relativePath += downPath[(idx + "/responses".Length)..];
+            var relativePath = "/backend-api/codex/responses";
+            if (downPath.Contains("/responses/", StringComparison.OrdinalIgnoreCase))
+            {
+                var idx = downPath.IndexOf("/responses/", StringComparison.OrdinalIgnoreCase);
+                relativePath += downPath[(idx + "/responses".Length)..];
+            }
+
+            up.RelativePath = relativePath;
+            up.QueryString = down.QueryString;
+            return Task.CompletedTask;
         }
 
-        up.RelativePath = relativePath;
-        up.QueryString = down.QueryString;
+        // API Key：chat completions / models 原样打上游，其余走 Responses
+        if (downPath.Contains("/models", StringComparison.OrdinalIgnoreCase))
+        {
+            up.RelativePath = "/v1/models";
+        }
+        else if (downPath.Contains("/chat/completions", StringComparison.OrdinalIgnoreCase))
+        {
+            up.RelativePath = "/v1/chat/completions";
+        }
+        else
+        {
+            var relativePath = "/v1/responses";
+            if (downPath.Contains("/responses/", StringComparison.OrdinalIgnoreCase))
+            {
+                var idx = downPath.IndexOf("/responses/", StringComparison.OrdinalIgnoreCase);
+                relativePath += downPath[(idx + "/responses".Length)..];
+            }
 
+            up.RelativePath = relativePath;
+        }
+
+        up.QueryString = down.QueryString;
         return Task.CompletedTask;
     }
 }

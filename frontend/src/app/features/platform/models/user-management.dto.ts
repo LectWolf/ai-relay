@@ -10,6 +10,7 @@ export interface UserManagementOutputDto {
   isEmailVerified: boolean;
   roles: string[];
   isSuperAdmin: boolean;
+  maxConcurrency: number;
   creationTime: string;
   lastLoginTime?: string;
 }
@@ -29,6 +30,7 @@ export interface CreateUserInputDto {
   password: string;
   isActive: boolean;
   isEmailVerified: boolean;
+  maxConcurrency: number;
   roles: string[];
 }
 
@@ -38,6 +40,7 @@ export interface UpdateUserInputDto {
   avatar?: string;
   isActive: boolean;
   isEmailVerified: boolean;
+  maxConcurrency: number;
   roles: string[];
 }
 

@@ -204,9 +204,17 @@ public sealed class ModelProvider(ILogger<ModelProvider> logger) : IModelProvide
         ],
         [ModelVendor.DeepSeek] =
         [
+            new("DeepSeek Flash", "deepseek-flash"),
             new("DeepSeek V4 Pro", "deepseek-v4-pro"),
-            new("DeepSeek V4 Flash", "deepseek-v4-flash"),
-            new("DeepSeek V3", "deepseek-v3")
+            new("DeepSeek V4 Flash", "deepseek-v4-flash")
+        ],
+        [ModelVendor.Grok] =
+        [
+            new("Grok 4.6", "grok-4.6"),
+            new("Grok 4", "grok-4"),
+            new("Grok 3", "grok-3"),
+            new("Grok 3 Mini", "grok-3-mini"),
+            new("Grok Code Fast 1", "grok-code-fast-1")
         ],
         [ModelVendor.MiniMax] =
         [
@@ -235,6 +243,8 @@ public sealed class ModelProvider(ILogger<ModelProvider> logger) : IModelProvide
         Provider.Claude          => GetClaudeMappedModel(requestedModel),
         Provider.OpenAI          => GetOpenAIMappedModel(requestedModel),
         Provider.OpenAICompatible => requestedModel, // 三方兼容接口全透传，防止被 Codex fallback 强制降级为 gpt-5.1
+        Provider.DeepSeek        => requestedModel,
+        Provider.Grok            => requestedModel,
         _                        => requestedModel // Gemini 等无需平台映射的提供商透传
     };
 
@@ -336,6 +346,8 @@ public sealed class ModelProvider(ILogger<ModelProvider> logger) : IModelProvide
                 ModelVendor.Zhipu,
                 ModelVendor.Jimeng
             ],
+            Provider.DeepSeek => [ModelVendor.DeepSeek],
+            Provider.Grok => [ModelVendor.Grok],
             _ => []
         };
 

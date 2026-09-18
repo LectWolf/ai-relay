@@ -36,9 +36,13 @@ public class OpenAiHeaderRequestProcessor(ChatModelConnectionOptions options) : 
 
             up.Headers["authorization"] = $"Bearer {options.Credential}";
 
-            // Responses API 需要 beta 声明；若客户端已透传则保留，否则注入默认值
-            if (!up.Headers.ContainsKey("openai-beta"))
+            // Responses API 需要 beta 声明；chat completions / models 不要带
+            var upPath = up.RelativePath ?? "";
+            if (upPath.Contains("/responses", StringComparison.OrdinalIgnoreCase)
+                && !up.Headers.ContainsKey("openai-beta"))
+            {
                 up.Headers["openai-beta"] = "responses=v1";
+            }
         }
 
         // 伪装官方客户端

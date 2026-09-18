@@ -14,6 +14,7 @@ public record UserManagementOutputDto
     public bool IsEmailVerified { get; init; }
     public required string[] Roles { get; init; }
     public bool IsSuperAdmin { get; init; }
+    public int MaxConcurrency { get; init; }
     public DateTime CreationTime { get; init; }
     public DateTime? LastLoginTime { get; init; }
 }

@@ -11,6 +11,7 @@ public enum ModelVendor
     Qwen,
     Moonshot,
     DeepSeek,
+    Grok,
     MiniMax,
     Zhipu,
     Jimeng

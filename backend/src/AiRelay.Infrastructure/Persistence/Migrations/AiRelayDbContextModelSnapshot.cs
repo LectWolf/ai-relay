@@ -1213,6 +1213,11 @@ namespace AiRelay.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsSuperAdmin")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("MaxConcurrency")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(5);
+
                     b.Property<string>("LastLoginIp")
                         .HasMaxLength(45)
                         .HasColumnType("character varying(45)");

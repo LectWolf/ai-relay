@@ -499,9 +499,16 @@ export const AVAILABLE_MODELS: Record<ModelVendor, ModelOptionOutputDto[]> = {
     { label: 'Kimi K2 Thinking', value: 'kimi-k2-thinking', category: 'Chat', vendor: ModelVendor.Moonshot }
   ],
   [ModelVendor.DeepSeek]: [
+    { label: 'DeepSeek Flash', value: 'deepseek-flash', category: 'Chat', vendor: ModelVendor.DeepSeek },
     { label: 'DeepSeek V4 Pro', value: 'deepseek-v4-pro', category: 'Chat', vendor: ModelVendor.DeepSeek },
-    { label: 'DeepSeek V4 Flash', value: 'deepseek-v4-flash', category: 'Chat', vendor: ModelVendor.DeepSeek },
-    { label: 'DeepSeek V3', value: 'deepseek-v3', category: 'Chat', vendor: ModelVendor.DeepSeek }
+    { label: 'DeepSeek V4 Flash', value: 'deepseek-v4-flash', category: 'Chat', vendor: ModelVendor.DeepSeek }
+  ],
+  [ModelVendor.Grok]: [
+    { label: 'Grok 4.6', value: 'grok-4.6', category: 'Chat', vendor: ModelVendor.Grok },
+    { label: 'Grok 4', value: 'grok-4', category: 'Chat', vendor: ModelVendor.Grok },
+    { label: 'Grok 3', value: 'grok-3', category: 'Chat', vendor: ModelVendor.Grok },
+    { label: 'Grok 3 Mini', value: 'grok-3-mini', category: 'Chat', vendor: ModelVendor.Grok },
+    { label: 'Grok Code Fast 1', value: 'grok-code-fast-1', category: 'Chat', vendor: ModelVendor.Grok }
   ],
   [ModelVendor.MiniMax]: [
     { label: 'MiniMax M2.7', value: 'MiniMax-M2.7', category: 'Chat', vendor: ModelVendor.MiniMax },

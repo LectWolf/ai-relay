@@ -87,6 +87,7 @@ export function addUser(value: any) {
     phoneNumber: value.phoneNumber,
     isActive: value.isActive ?? true,
     isSuperAdmin: false,
+    maxConcurrency: value.maxConcurrency ?? 5,
     isEmailVerified: value.isEmailVerified ?? false,
     creationTime: new Date().toISOString(),
     roles: value.roles ?? ['Member'],
@@ -108,6 +109,7 @@ export function updateUser(id: string, value: any) {
     avatar: value.avatar,
     isActive: value.isActive,
     isEmailVerified: value.isEmailVerified,
+    maxConcurrency: value.maxConcurrency ?? user.maxConcurrency ?? 5,
     roles: value.roles
   });
   return toUserManagementOutput(user);
