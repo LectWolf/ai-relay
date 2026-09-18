@@ -72,6 +72,13 @@ try
         .Bind(builder.Configuration.GetSection(SmtpOptions.SectionName))
         .ValidateDataAnnotations()
         .ValidateOnStart();
+    builder.Services.AddOptions<AiRelay.Application.SystemUpdate.Options.SystemUpdateOptions>()
+        .Bind(builder.Configuration.GetSection(AiRelay.Application.SystemUpdate.Options.SystemUpdateOptions.SectionName));
+    builder.Services.AddHttpClient<AiRelay.Application.SystemUpdate.ISystemUpdateAppService, AiRelay.Application.SystemUpdate.SystemUpdateAppService>(client =>
+    {
+        client.Timeout = TimeSpan.FromMinutes(15);
+        client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "ai-relay-updater");
+    });
 
     // ModelPricing 本地备份路径默认值（未配置时使用 ContentRootPath 下的 Resources 目录）
     builder.Services.PostConfigure<ModelPricingOptions>(options =>

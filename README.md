@@ -88,39 +88,34 @@ AI-Relay 是一个现代化的主流 AI 大模型代理服务。它能提供多�
 
 ### 🐳 Docker Compose 部署（✨ 推荐方式）
 
-Docker Compose 是**首选部署方式**，自动配置数据库、Redis 和应用服务，无需手动安装依赖，适合生产环境快速部署。
+Compose **只跑应用主体**。PostgreSQL 和 Redis 用你现成的外部实例（1Panel 数据库、本机服务都可以）。
 
 1. **下载配置文件**
 
    ```bash
-   # 下载 docker-compose.yml
-   wget https://raw.githubusercontent.com/zengqinglei/ai-relay/main/deploy/docker-compose.yml
+   wget https://raw.githubusercontent.com/LectWolf/ai-relay/main/deploy/docker-compose.yml
    ```
 
 2. **编辑环境变量**
 
    ```bash
-   # 编辑配置文件
    nano docker-compose.yml
    ```
 
    **必须修改的配置项**：
    - `DefaultAdmin__Password`：管理员密码
    - `Jwt__SecretKey`：JWT 密钥（至少 32 字符）
-   - `ConnectionStrings__Default`：PostgreSQL 连接字符串
-   - `ConnectionStrings__Redis`：Redis 连接字符串（可选）
+   - `ConnectionStrings__Default`：外部 PostgreSQL
+   - `ConnectionStrings__Redis`：外部 Redis（可选）
+
+   后台「立即更新」需要把宿主机 `/var/run/docker.sock` 挂进容器（默认已写在 compose 里）。
 
 3. **启动服务**
 
    ```bash
-   # 启动所有服务
-   docker-compose up -d
-
-   # 查看服务状态
-   docker-compose ps
-
-   # 查看日志
-   docker-compose logs -f backend
+   docker compose up -d
+   docker compose ps
+   docker compose logs -f backend
    ```
 
 4. **访问应用**

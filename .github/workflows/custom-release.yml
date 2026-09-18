@@ -116,10 +116,67 @@ jobs:
           build-args: |
             NODE_VERSION=${{ needs.validate.outputs.node_version }}
 
-  publish-release:
-    needs: [validate, build-image]
+  build-package:
+    needs: validate
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout release source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ needs.validate.outputs.node_version }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build -- --configuration=production
+
+      - name: Publish linux-x64 package
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          UPSTREAM_VERSION: ${{ needs.validate.outputs.upstream_version }}
+        run: |
+          mkdir -p backend/src/AiRelay.Api/wwwroot dist
+          cp -a frontend/dist/airelay-web/browser/. backend/src/AiRelay.Api/wwwroot/
+          dotnet publish backend/src/AiRelay.Api/AiRelay.Api.csproj \
+            -c Release -r linux-x64 --self-contained true \
+            -p:PublishSingleFile=false \
+            -o publish/linux-x64
+          printf '%s\n' "$VERSION" > publish/linux-x64/VERSION
+          printf '%s\n' "$UPSTREAM_VERSION" > publish/linux-x64/UPSTREAM_VERSION
+          chmod 0755 publish/linux-x64/AiRelay.Api || true
+          tar -C publish/linux-x64 -czf "dist/ai-relay_${VERSION}_linux-x64.tar.gz" .
+          (cd dist && sha256sum "ai-relay_${VERSION}_linux-x64.tar.gz" > checksums.txt)
+
+      - name: Upload linux package
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-x64-package
+          path: dist/*
+          retention-days: 1
+
+  publish-release:
+    needs: [validate, build-image, build-package]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download linux package
+        uses: actions/download-artifact@v8
+        with:
+          name: linux-x64-package
+          path: dist/
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -127,6 +184,8 @@ jobs:
           name: AI-Relay ${{ needs.validate.outputs.version }}
           prerelease: false
           generate_release_notes: true
+          files: dist/*
+          fail_on_unmatched_files: true
           body: |
             自定义版本：`${{ needs.validate.outputs.version }}`
             上游 AI-Relay 基线：`${{ needs.validate.outputs.upstream_version }}`
@@ -134,4 +193,10 @@ jobs:
             Docker 镜像：
             ```bash
             docker pull ghcr.io/lectwolf/ai-relay:${{ needs.validate.outputs.version }}
+            ```
+
+            进程包（systemd / 1Panel）：
+            ```bash
+            # 解压到 /opt/ai-relay 后使用 deploy/ai-relay.service
+            # 后台「立即更新」会下载这个 tar.gz
             ```

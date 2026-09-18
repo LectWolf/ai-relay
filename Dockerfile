@@ -58,6 +58,7 @@ EXPOSE 8080
 
 # 1. 拷贝后端构建结果
 COPY --from=backend-build /app/publish .
+COPY VERSION UPSTREAM_VERSION ./
 
 # 2. 拷贝前端构建结果到后端的 wwwroot 目录，让 ASP.NET Core 直接托管静态 SPA 文件
 # Angular >= 17 生产构建会输出到 dist/<project>/browser 目录
